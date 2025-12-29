@@ -1,4 +1,4 @@
-import { useDashboardVM } from '@viewmodels/useDashboardVM';
+import { useDashboardVM } from '@viewmodels/index';
 import { GaugeCard } from '@views/components/indicator/GaugeCard';
 import { LoadingSpinner } from '@views/components/common/LoadingSpinner';
 import { ErrorMessage } from '@views/components/common/ErrorMessage';
@@ -9,7 +9,7 @@ import { useMemo } from 'react';
 
 export const DashboardPage = () => {
   const { indicators, isLoading, error, refresh } = useDashboardVM();
-
+  console.log({ indicators });
   // 위기 레벨 계산 (레벨 + 근거)
   const crisisResult = useMemo(() => {
     if (indicators.length === 0) {

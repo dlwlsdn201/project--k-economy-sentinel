@@ -8,6 +8,9 @@ importers:
 
   .:
     dependencies:
+      '@toss/ky':
+        specifier: ^1.2.1
+        version: 1.2.1
       echarts:
         specifier: ^6.0.0
         version: 6.0.0
@@ -790,6 +793,9 @@ packages:
     engines: {node: '>=12', npm: '>=6'}
     peerDependencies:
       '@testing-library/dom': '>=7.21.4'
+
+  '@toss/ky@1.2.1':
+    resolution: {integrity: sha512-72qJyUVyyNC7d4EOKVyjPQH3UH3GnVSAo3mM+3vqGVTgh84vPPW3KPFvrV/DZe33dHMygCUsmIhnP9G5T5n9AQ==}
 
   '@tsconfig/node10@1.0.12':
     resolution: {integrity: sha512-UCYBaeFvM11aU2y3YPZ//O5Rhj+xKyzy7mvcIoAjASbigy8mHMryP5cK7dgjlz2hWxh1g5pLw084E0a/wlUSFQ==}
@@ -2589,6 +2595,8 @@ snapshots:
   '@testing-library/user-event@14.6.1(@testing-library/dom@10.4.1)':
     dependencies:
       '@testing-library/dom': 10.4.1
+
+  '@toss/ky@1.2.1': {}
 
   '@tsconfig/node10@1.0.12': {}
 

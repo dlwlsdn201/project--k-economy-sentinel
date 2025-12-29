@@ -18,6 +18,17 @@ export default defineConfig({
       '@utils': path.resolve(__dirname, './src/utils'),
     },
   },
+  server: {
+    proxy: {
+      // ECOS API 프록시 설정
+      '/api/StatisticSearch': {
+        target: 'https://ecos.bok.or.kr',
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/api\/ecos/, '/api'),
+        secure: true,
+      },
+    },
+  },
   test: {
     globals: true,
     environment: 'jsdom',

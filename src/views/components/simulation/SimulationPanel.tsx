@@ -1,8 +1,7 @@
-import { useAtom } from 'jotai';
-import { indicatorsAtom } from '@viewmodels/useDashboardVM';
+import { useDashboardVM } from '@viewmodels/useDashboardVM';
 import type { EconomicIndicator } from '@models/types/indicatorTypes';
 import { X, Sliders } from 'lucide-react';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 
 interface SimulationPanelProps {
   isOpen: boolean;
@@ -10,24 +9,29 @@ interface SimulationPanelProps {
 }
 
 export const SimulationPanel = ({ isOpen, onClose }: SimulationPanelProps) => {
-  const [indicators, setIndicators] = useAtom(indicatorsAtom);
+  const { indicators, setSimulationIndicators } = useDashboardVM();
   const [localIndicators, setLocalIndicators] = useState<EconomicIndicator[]>(
-    indicators
+    []
   );
+
+  // 패널이 열릴 때 indicators를 localIndicators로 초기화
+  useEffect(() => {
+    if (isOpen && indicators.length > 0) {
+      setLocalIndicators([...indicators]);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isOpen]);
 
   if (!isOpen) return null;
 
-  const handleValueChange = (
-    id: string,
-    value: number
-  ) => {
+  const handleValueChange = (id: string, value: number) => {
     setLocalIndicators((prev) =>
       prev.map((ind) => (ind.id === id ? { ...ind, value } : ind))
     );
   };
 
   const handleApply = () => {
-    setIndicators(localIndicators);
+    setSimulationIndicators(localIndicators);
   };
 
   const handleReset = () => {
@@ -65,7 +69,13 @@ export const SimulationPanel = ({ isOpen, onClose }: SimulationPanelProps) => {
                 type="range"
                 min={indicator.value * 0.5}
                 max={indicator.value * 2}
-                step={indicator.unit === '%' ? 0.1 : indicator.unit === '원' ? 10 : 100}
+                step={
+                  indicator.unit === '%'
+                    ? 0.1
+                    : indicator.unit === '원'
+                      ? 10
+                      : 100
+                }
                 value={indicator.value}
                 onChange={(e) =>
                   handleValueChange(indicator.id, parseFloat(e.target.value))
@@ -98,4 +108,3 @@ export const SimulationPanel = ({ isOpen, onClose }: SimulationPanelProps) => {
     </div>
   );
 };
-

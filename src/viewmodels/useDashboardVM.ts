@@ -1,68 +1,131 @@
-import { atom, useAtomValue, useSetAtom } from 'jotai';
-import { useEffect } from 'react';
+import { useEffect, useMemo } from 'react';
 import type { EconomicIndicator } from '@models/types/indicatorTypes';
-import { INDICATOR_METADATA, determineStatus } from '@models/constants/indicatorConstants';
-
-// 지표 데이터 atom
-export const indicatorsAtom = atom<EconomicIndicator[]>([]);
-
-// 로딩 상태 atom
-export const isLoadingAtom = atom<boolean>(false);
-
-// 에러 상태 atom
-export const errorAtom = atom<string | null>(null);
+import { useBondIndicator } from './useBondIndicator';
+import { useExchangeIndicator } from './useExchangeIndicator';
+import { useReserveIndicator } from './useReserveIndicator';
+import { usePfIndicator } from './usePfIndicator';
+import { useStockIndicator } from './useStockIndicator';
 
 /**
  * 대시보드 ViewModel
- * 지표 데이터 상태 관리 및 위험도 판별 로직 제공
+ * 각 지표별 hook을 조합하여 전체 지표 배열을 제공
+ *
+ * 역할:
+ * - 각 지표별 hook을 조합
+ * - 전체 로딩/에러 상태 집계
+ * - 모든 지표 데이터를 한 번에 새로고침
  */
 export const useDashboardVM = () => {
-  const indicators = useAtomValue(indicatorsAtom);
-  const isLoading = useAtomValue(isLoadingAtom);
-  const error = useAtomValue(errorAtom);
-  const setIndicators = useSetAtom(indicatorsAtom);
-  const setIsLoading = useSetAtom(isLoadingAtom);
-  const setError = useSetAtom(errorAtom);
+  // 각 지표별 hook 호출
+  const bondHook = useBondIndicator();
+  const exchangeHook = useExchangeIndicator();
+  const reserveHook = useReserveIndicator();
+  const pfHook = usePfIndicator();
+  const stockHook = useStockIndicator();
 
-  // 초기 데이터 로드 (목업 데이터)
+  // 전체 지표 배열 조합
+  const indicators = useMemo<EconomicIndicator[]>(() => {
+    const result: EconomicIndicator[] = [];
+
+    if (bondHook.indicator) result.push(bondHook.indicator);
+    if (exchangeHook.indicator) result.push(exchangeHook.indicator);
+    if (reserveHook.indicator) result.push(reserveHook.indicator);
+    if (pfHook.indicator) result.push(pfHook.indicator);
+    if (stockHook.indicator) result.push(stockHook.indicator);
+
+    return result;
+  }, [bondHook, exchangeHook, reserveHook, pfHook, stockHook]);
+
+  // 전체 로딩 상태 (하나라도 로딩 중이면 true)
+  const isLoading = useMemo(
+    () =>
+      bondHook.isLoading ||
+      exchangeHook.isLoading ||
+      reserveHook.isLoading ||
+      pfHook.isLoading ||
+      stockHook.isLoading,
+    [
+      bondHook.isLoading,
+      exchangeHook.isLoading,
+      reserveHook.isLoading,
+      pfHook.isLoading,
+      stockHook.isLoading,
+    ]
+  );
+
+  // 전체 에러 상태 (에러가 있는 hook의 에러 메시지 배열)
+  const errors = useMemo<string[]>(() => {
+    const errorList: string[] = [];
+    if (bondHook.error) errorList.push(bondHook.error);
+    if (exchangeHook.error) errorList.push(exchangeHook.error);
+    if (reserveHook.error) errorList.push(reserveHook.error);
+    if (pfHook.error) errorList.push(pfHook.error);
+    if (stockHook.error) errorList.push(stockHook.error);
+    return errorList;
+  }, [
+    bondHook.error,
+    exchangeHook.error,
+    reserveHook.error,
+    pfHook.error,
+    stockHook.error,
+  ]);
+
+  // 첫 번째 에러 메시지 (또는 통합 메시지)
+  const error = errors.length > 0 ? errors.join('; ') : null;
+
+  // 초기 데이터 로드
   useEffect(() => {
-    const loadInitialData = () => {
-      setIsLoading(true);
-      setError(null);
-
-      try {
-        // 목업 데이터 생성
-        const mockData = createMockIndicators();
-        setIndicators(mockData);
-      } catch (err) {
-        setError(err instanceof Error ? err.message : '데이터 로드 중 오류가 발생했습니다.');
-      } finally {
-        setIsLoading(false);
-      }
+    const loadInitialData = async () => {
+      await Promise.all([
+        bondHook.fetch(),
+        exchangeHook.fetch(),
+        reserveHook.fetch(),
+        pfHook.fetch(),
+        stockHook.fetch(),
+      ]);
     };
 
     loadInitialData();
-  }, [setIndicators, setIsLoading, setError]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // 최초 마운트 시에만 실행
 
-  // 향후 API 연동 시 사용할 데이터 새로고침 함수
+  // 모든 지표 데이터 새로고침
   const refresh = async () => {
-    setIsLoading(true);
-    setError(null);
+    await Promise.all([
+      bondHook.fetch(),
+      exchangeHook.fetch(),
+      reserveHook.fetch(),
+      pfHook.fetch(),
+      stockHook.fetch(),
+    ]);
+  };
 
-    try {
-      // TODO: API 연동 시 실제 데이터 fetch
-      // ECOS API 참고:
-      // - 외국인 순매수: 802Y001 (일일 기준, 양수=순매수, 음수=순매도, 단위: 억원)
-      // - 기타 지표: 해당 API 코드 확인 필요
-      // const data = await fetchIndicators();
-      // setIndicators(data);
-      const mockData = createMockIndicators();
-      setIndicators(mockData);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : '데이터 새로고침 중 오류가 발생했습니다.');
-    } finally {
-      setIsLoading(false);
-    }
+  /**
+   * 시뮬레이션 모드: 모든 지표 값을 한 번에 설정 (개발용)
+   */
+  const setSimulationIndicators = (newIndicators: EconomicIndicator[]) => {
+    newIndicators.forEach((indicator) => {
+      switch (indicator.id) {
+        case 'bond':
+          bondHook.setSimulationValue(indicator.value);
+          break;
+        case 'exchange':
+          exchangeHook.setSimulationValue(indicator.value);
+          break;
+        case 'reserve':
+          reserveHook.setSimulationValue(indicator.value);
+          break;
+        case 'pf':
+          pfHook.setSimulationValue(indicator.value);
+          break;
+        case 'stock':
+          stockHook.setSimulationValue(indicator.value);
+          break;
+        default:
+          // 알 수 없는 지표 ID는 무시
+          break;
+      }
+    });
   };
 
   return {
@@ -70,50 +133,14 @@ export const useDashboardVM = () => {
     isLoading,
     error,
     refresh,
+    setSimulationIndicators,
+    // 개별 hook 접근 (필요시 사용)
+    hooks: {
+      bond: bondHook,
+      exchange: exchangeHook,
+      reserve: reserveHook,
+      pf: pfHook,
+      stock: stockHook,
+    },
   };
 };
-
-/**
- * 목업 데이터 생성 함수 (개발용)
- */
-export const createMockIndicators = (): EconomicIndicator[] => {
-  const indicatorIds: Array<keyof typeof INDICATOR_METADATA> = [
-    'bond',
-    'exchange',
-    'reserve',
-    'pf',
-    'stock',
-  ];
-
-  // 목업 값 (문서 기준)
-  const mockValues: Record<string, number> = {
-    bond: 3.8, // WARNING
-    exchange: 1380, // WARNING
-    reserve: 4100, // WARNING
-    pf: 8.5, // WARNING
-    stock: -2000, // WARNING
-  };
-
-  // 현재 시간을 기준으로 목업 데이터 생성
-  const now = new Date();
-  const fetchedAt = now.toISOString();
-
-  return indicatorIds.map((id) => {
-    const value = mockValues[id] ?? 0;
-    const metadata = INDICATOR_METADATA[id];
-    const status = determineStatus(id, value);
-
-    return {
-      id,
-      name: metadata.name,
-      value,
-      unit: metadata.unit,
-      status,
-      source: metadata.source,
-      description: metadata.description,
-      dataPeriod: metadata.dataPeriod,
-      fetchedAt,
-    };
-  });
-};
-

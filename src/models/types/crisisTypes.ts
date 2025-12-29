@@ -27,8 +27,8 @@ export interface ActionPlan {
  * 지표 ID (PRD 기준)
  */
 export type IndicatorIdPRD =
-  | 'bond10y'
-  | 'exchangeRate'
-  | 'fxReserves'
-  | 'pfDelinquency'
-  | 'foreignerSell';
+  | 'bond10y' // 국고채 10년 금리
+  | 'exchangeRate' // 환율
+  | 'fxReserves' // 외환보유액
+  | 'pfDelinquency' // PF 연체율
+  | 'foreignerBuying'; // 외국인 순매수
