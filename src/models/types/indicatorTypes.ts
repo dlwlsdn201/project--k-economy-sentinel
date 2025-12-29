@@ -1,0 +1,16 @@
+export type IndicatorStatus = 'SAFE' | 'WARNING' | 'DANGER';
+
+export type IndicatorId = 'bond' | 'exchange' | 'reserve' | 'pf' | 'stock';
+
+export interface EconomicIndicator {
+  id: IndicatorId;
+  name: string;
+  value: number;
+  unit: string;
+  status: IndicatorStatus;
+  source: string;
+  description?: string;
+  dataPeriod?: string; // 데이터 산출 기준 (예: '실시간', '당일', '전월 말')
+  fetchedAt: string; // ISO 8601 형식의 날짜 문자열
+}
+

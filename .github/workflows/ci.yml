@@ -3,11 +3,12 @@ name: Auto Merge Feature Branches
 on:
   push:
     branches:
-      - 'feature/*'
-      - 'refactor/*'
-      - 'improve/*'
-      - 'bugfix/*'
-      - 'hotfix/*'
+      - "*-feature--*"
+      - "feature/*"
+      - "refactor/*"
+      - "improve/*"
+      - "bugfix/*"
+      - "hotfix/*"
 
 jobs:
   build-test:

@@ -6,6 +6,14 @@
     "module": "ESNext", // 최신 ESMAScript 모듈 시스템 사용
     "skipLibCheck": true, // 라이브러리의 타입 검사를 생략하여 빌드 속도 향상
     "baseUrl": "./", // 기본 경로 설정
+    "paths": {
+      "@models/*": ["./src/models/*"],
+      "@viewmodels/*": ["./src/viewmodels/*"],
+      "@views/*": ["./src/views/*"],
+      "@app/*": ["./src/app/*"],
+      "@assets/*": ["./src/assets/*"],
+      "@utils/*": ["./src/utils/*"]
+    },
 
     /* Bundler mode */
     "moduleResolution": "Node", // Node.js 모듈 해석 방식 사용
@@ -23,12 +31,7 @@
     "noUnusedLocals": true, // 사용되지 않은 변수 검사
     "noUnusedParameters": true, // 사용되지 않은 파라미터들 검사
     "noFallthroughCasesInSwitch": true,
-    "types": [
-      "vite/client",
-      "jest",
-      "@testing-library/jest-dom",
-      "@jest/globals"
-    ] // Vite, Jest, RTL 타입 추가
+    "types": ["vite/client", "vitest/globals", "@testing-library/jest-dom"] // Vite, Vitest, RTL 타입 추가
   },
   "include": ["src"],
   "exclude": ["node_modules", "dist"]

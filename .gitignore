@@ -1,6 +1,11 @@
 # Compiled class file
 *.class
 
+# Compiled files
+dist
+.next
+*.tsbuildinfo
+
 # Log file
 *.log
 
