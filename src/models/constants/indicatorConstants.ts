@@ -20,8 +20,8 @@ export const THRESHOLD_PF_RATE_SAFE = 5;
 export const THRESHOLD_PF_RATE_WARNING = 9;
 export const THRESHOLD_PF_RATE_DANGER = 10;
 
-// 외국인 순매수 기준값 (억원) - 음수면 매도, 양수면 매수
-export const THRESHOLD_STOCK_FLOW_SAFE = 0; // 순매수 지속
+// 외국인 순매도 기준값 (억원) - 음수면 매도, 양수면 매수
+export const THRESHOLD_STOCK_FLOW_SAFE = 0; // 순매도 지속
 export const THRESHOLD_STOCK_FLOW_WARNING = -1000; // 매도세 전환
 export const THRESHOLD_STOCK_FLOW_DANGER = -5000; // 대규모 이탈
 
@@ -64,7 +64,7 @@ export const INDICATOR_METADATA: Record<
     source: 'AI 자동 수집',
   },
   stock: {
-    name: '외국인 순매수',
+    name: '외국인 순매도',
     unit: '억원',
     description:
       '외국인이 주식/채권을 꾸준히 팔아치우면(Sell Korea) 위기 감지의 증거.',

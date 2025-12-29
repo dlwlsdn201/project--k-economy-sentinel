@@ -8,4 +8,3 @@ interface ProvidersProps {
 export const Providers = ({ children }: ProvidersProps) => {
   return <Provider>{children}</Provider>;
 };
-

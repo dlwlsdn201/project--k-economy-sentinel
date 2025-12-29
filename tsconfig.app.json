@@ -11,7 +11,8 @@
       "@viewmodels/*": ["./src/viewmodels/*"],
       "@views/*": ["./src/views/*"],
       "@app/*": ["./src/app/*"],
-      "@assets/*": ["./src/assets/*"]
+      "@assets/*": ["./src/assets/*"],
+      "@utils/*": ["./src/utils/*"]
     },
 
     /* Bundler mode */
