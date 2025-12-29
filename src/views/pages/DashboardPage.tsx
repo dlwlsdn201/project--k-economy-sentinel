@@ -1,7 +1,7 @@
-import { useDashboardVM } from '@viewmodels/use_dashboard_vm';
-import { StatusCard } from '@views/components/indicator/status_card';
-import { LoadingSpinner } from '@views/components/common/loading_spinner';
-import { ErrorMessage } from '@views/components/common/error_message';
+import { useDashboardVM } from '@viewmodels/useDashboardVM';
+import { StatusCard } from '@views/components/indicator/StatusCard';
+import { LoadingSpinner } from '@views/components/common/LoadingSpinner';
+import { ErrorMessage } from '@views/components/common/ErrorMessage';
 
 export const DashboardPage = () => {
   const { indicators, isLoading, error, refresh } = useDashboardVM();
@@ -39,4 +39,3 @@ export const DashboardPage = () => {
     </div>
   );
 };
-

@@ -1,7 +1,7 @@
 import { atom, useAtomValue, useSetAtom } from 'jotai';
 import { useEffect } from 'react';
-import type { EconomicIndicator } from '@models/types/indicator.types';
-import { INDICATOR_METADATA, determineStatus } from '@models/constants/indicator.constants';
+import type { EconomicIndicator } from '@models/types/indicatorTypes';
+import { INDICATOR_METADATA, determineStatus } from '@models/constants/indicatorConstants';
 
 // 지표 데이터 atom
 export const indicatorsAtom = atom<EconomicIndicator[]>([]);

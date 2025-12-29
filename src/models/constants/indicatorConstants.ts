@@ -1,4 +1,4 @@
-import type { IndicatorId, IndicatorStatus } from '../types/indicator.types';
+import type { IndicatorId, IndicatorStatus } from '../types/indicatorTypes';
 
 // 국고채 10년물 금리 기준값
 export const THRESHOLD_BOND_RATE_SAFE = 3.5;
@@ -38,31 +38,36 @@ export const INDICATOR_METADATA: Record<
   bond: {
     name: '국고채 10년물 금리',
     unit: '%',
-    description: '이 금리가 4%를 넘어선다면 내부 시스템의 균열이 생각보다 훨씬 심각하다는 경고등으로 봐야함.',
+    description:
+      '이 금리가 4%를 넘어선다면 내부 시스템의 균열이 생각보다 훨씬 심각하다는 경고등으로 봐야함.',
     source: '한국은행 ECOS',
   },
   exchange: {
     name: '원/달러 환율',
     unit: '원',
-    description: '한국시장에서 돈을 빼서 달러로 바꿔나가기 시작하면 환율은 치솟게됨. 환율 1,500원 달성 시 강력한 위기 신호.',
+    description:
+      '한국시장에서 돈을 빼서 달러로 바꿔나가기 시작하면 환율은 치솟게됨. 환율 1,500원 달성 시 강력한 위기 신호.',
     source: '한국은행 ECOS',
   },
   reserve: {
     name: '외환보유액',
     unit: '억 달러',
-    description: '환율 방어 작전에 쓰이는 총알. 현재 4,300억 달러 수준의 외환보유고가 급격히 줄어들기 시작한다면 이는 우리 방어선이 빠르게 소진되고 있다는 신호임.',
+    description:
+      '환율 방어 작전에 쓰이는 총알. 현재 4,300억 달러 수준의 외환보유고가 급격히 줄어들기 시작한다면 이는 우리 방어선이 빠르게 소진되고 있다는 신호임.',
     source: '한국은행 ECOS',
   },
   pf: {
     name: 'PF 대출 연체율',
     unit: '%',
-    description: '취약 업권(저축은행 등)의 연체율이 10%에 육박하면 뇌관 폭발 직전. 전체 평균이 아닌 취약 수치를 봐야 함.',
+    description:
+      '취약 업권(저축은행 등)의 연체율이 10%에 육박하면 뇌관 폭발 직전. 전체 평균이 아닌 취약 수치를 봐야 함.',
     source: 'AI 자동 수집',
   },
   stock: {
     name: '외국인 순매수',
     unit: '억원',
-    description: '외국인이 주식/채권을 꾸준히 팔아치우면(Sell Korea) 위기 감지의 증거.',
+    description:
+      '외국인이 주식/채권을 꾸준히 팔아치우면(Sell Korea) 위기 감지의 증거.',
     source: '한국은행 ECOS',
   },
 };
@@ -104,4 +109,3 @@ export const determineStatus = (
       return 'SAFE';
   }
 };
-

@@ -1,4 +1,4 @@
-import type { EconomicIndicator, IndicatorStatus } from '@models/types/indicator.types';
+import type { EconomicIndicator, IndicatorStatus } from '@models/types/indicatorTypes';
 import { AlertCircle, CheckCircle2, AlertTriangle, Clock } from 'lucide-react';
 
 interface StatusCardProps {

@@ -91,7 +91,7 @@ src/
 │
 ├── views/               # [View] UI 레이어
 │   ├── pages/          # 페이지 컴포넌트
-│   │   └── dashboard_page.tsx
+│   │   └── dashboardPage.tsx
 │   └── components/     # 재사용 가능한 컴포넌트
 │       ├── layout/     # 레이아웃 컴포넌트
 │       ├── indicator/  # 지표 관련 컴포넌트

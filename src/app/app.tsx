@@ -1,7 +1,7 @@
-import { Providers } from './providers';
-import { DashboardPage } from '@views/pages/dashboard_page';
-import { Header } from '@views/components/layout/header';
-import { Footer } from '@views/components/layout/footer';
+import { Providers } from './Providers';
+import { DashboardPage } from '@views/pages/DashboardPage';
+import { Header } from '@views/components/layout/Header';
+import { Footer } from '@views/components/layout/Footer';
 
 export const App = () => {
   return (
@@ -16,4 +16,3 @@ export const App = () => {
     </Providers>
   );
 };
-
