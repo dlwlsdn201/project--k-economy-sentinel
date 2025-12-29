@@ -1,72 +1,67 @@
-import { atom, useAtomValue, useSetAtom } from 'jotai';
+import { atom, useAtom } from 'jotai';
 import { useState } from 'react';
 import type { EconomicIndicator } from '@models/types/indicatorTypes';
 import {
   INDICATOR_METADATA,
   determineStatus,
 } from '@models/constants/indicatorConstants';
+import { readReserve, type ReadReserveResponse } from '@models/api/readReserve';
+import { formatValueFloat } from '@utils/format';
+import dayjs, { Dayjs } from 'dayjs';
 
 // 외환보유액 atom
-const reserveIndicatorAtom = atom<EconomicIndicator | null>(null);
+export const reserveIndicatorAtom = atom<EconomicIndicator | null>(null);
 
 /**
  * 외환보유액 지표 ViewModel Hook
  * API 호출 + 데이터 변환 + 상태 관리
  */
 export const useReserveIndicator = () => {
-  const indicator = useAtomValue(reserveIndicatorAtom);
-  const setIndicator = useSetAtom(reserveIndicatorAtom);
+  const [indicator, setIndicator] = useAtom(reserveIndicatorAtom);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   /**
-   * 외환보유액 데이터 조회
+   * API 응답을 EconomicIndicator로 변환
    */
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const fetch = async (_date?: string) => {
+  const transformReserveData = (rawData: unknown): EconomicIndicator => {
+    const data = rawData as ReadReserveResponse;
+    // DATA_VALUE는 문자열로 제공되므로 숫자로 변환
+    const dataValue = data?.StatisticSearch?.row?.[0]?.DATA_VALUE;
+    const value = dataValue ? parseFloat(dataValue) : 0;
+    const formattedValueForBillions = formatValueFloat(value / 100000); // 천 달러 단위인 raw data -> "억달러" 단위 변환
+    const metadata = INDICATOR_METADATA.reserve;
+    const status = determineStatus('reserve', formattedValueForBillions);
+    const now = new Date();
+    return {
+      id: 'reserve',
+      name: metadata.name,
+      value: formattedValueForBillions,
+      unit: metadata.unit,
+      status,
+      source: metadata.source,
+      description: metadata.description,
+      dataPeriod: metadata.dataPeriod,
+      fetchedAt: now.toISOString(),
+    };
+  };
+
+  /**
+   * 외환보유액 데이터 조회 트리거 함수
+   * Monthly 기간 조회만 지원하므로 YYYYMM 형식으로 변환
+   */
+  const fetch = async (date?: Dayjs) => {
     setIsLoading(true);
     setError(null);
 
     try {
-      // TODO: 실제 API 호출 구현
-      // const rawData = await readReserve({ date: _date });
-      // const transformReserveData = (rawData: unknown): EconomicIndicator => {
-      //   const value = (rawData as { value?: number })?.value ?? 0;
-      //   const metadata = INDICATOR_METADATA.reserve;
-      //   const status = determineStatus('reserve', value);
-      //   const now = new Date();
-      //   return {
-      //     id: 'reserve',
-      //     name: metadata.name,
-      //     value,
-      //     unit: metadata.unit,
-      //     status,
-      //     source: metadata.source,
-      //     description: metadata.description,
-      //     dataPeriod: metadata.dataPeriod,
-      //     fetchedAt: now.toISOString(),
-      //   };
-      // };
-      // const transformed = transformReserveData(rawData);
+      // Monthly 기간 조회만 지원하므로 YYYYMM 형식으로 변환
+      const targetDate = date
+        ? dayjs(date).subtract(1, 'month').format('YYYYMM')
+        : dayjs().subtract(1, 'month').format('YYYYMM');
 
-      // 임시: 목업 데이터
-      const mockValue = 4100;
-      const metadata = INDICATOR_METADATA.reserve;
-      const status = determineStatus('reserve', mockValue);
-      const now = new Date();
-
-      const transformed: EconomicIndicator = {
-        id: 'reserve',
-        name: metadata.name,
-        value: mockValue,
-        unit: metadata.unit,
-        status,
-        source: metadata.source,
-        description: metadata.description,
-        dataPeriod: metadata.dataPeriod,
-        fetchedAt: now.toISOString(),
-      };
-
+      const rawData = await readReserve({ date: targetDate });
+      const transformed = transformReserveData(rawData);
       setIndicator(transformed);
     } catch (err) {
       const errorMessage =
@@ -85,8 +80,7 @@ export const useReserveIndicator = () => {
    */
   const setSimulationValue = (value: number) => {
     if (!indicator) return;
-    
-    const metadata = INDICATOR_METADATA.reserve;
+
     const status = determineStatus('reserve', value);
     const now = new Date();
 

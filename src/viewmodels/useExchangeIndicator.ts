@@ -9,6 +9,8 @@ import {
   readExchangeRate,
   type ReadExchangeRateResponse,
 } from '@models/api/readExchangeRate';
+import { formatValueFloat } from '@utils/format';
+import dayjs, { Dayjs } from 'dayjs';
 
 // 원/달러 환율 atom
 export const exchangeIndicatorAtom = atom<EconomicIndicator | null>(null);
@@ -38,7 +40,7 @@ export const useExchangeIndicator = () => {
 
     // DATA_VALUE는 문자열로 제공되므로 숫자로 변환
     const dataValue = exchangeRow?.DATA_VALUE;
-    const value = dataValue ? Number(parseFloat(dataValue).toFixed(1)) : 0;
+    const value = dataValue ? formatValueFloat(parseFloat(dataValue)) : 0;
     const metadata = INDICATOR_METADATA.exchange;
     const status = determineStatus('exchange', value);
     const now = new Date();
@@ -59,13 +61,14 @@ export const useExchangeIndicator = () => {
   /**
    * 원/달러 환율 데이터 조회 트리거 함수
    */
-  const fetch = async (date?: string) => {
+  const fetch = async (date?: Dayjs) => {
     setIsLoading(true);
     setError(null);
 
     try {
-      const targetDate =
-        date ?? new Date().toISOString().split('T')[0].replace(/-/g, '');
+      const targetDate = date
+        ? dayjs(date).format('YYYYMMDD')
+        : dayjs().format('YYYYMMDD');
       const rawData = await readExchangeRate({ date: targetDate });
       const transformed = transformExchangeData(rawData);
       setIndicator(transformed);

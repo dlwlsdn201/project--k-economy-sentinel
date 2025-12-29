@@ -9,7 +9,6 @@ import { useMemo } from 'react';
 
 export const DashboardPage = () => {
   const { indicators, isLoading, error, refresh } = useDashboardVM();
-  console.log({ indicators });
   // 위기 레벨 계산 (레벨 + 근거)
   const crisisResult = useMemo(() => {
     if (indicators.length === 0) {
@@ -50,7 +49,6 @@ export const DashboardPage = () => {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {indicators.length > 0 ? (
             indicators.map((indicator) => (
-              // <SampleGauge key={indicator.id} />
               <GaugeCard key={indicator.id} indicator={indicator} />
             ))
           ) : (

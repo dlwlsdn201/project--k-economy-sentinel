@@ -5,6 +5,7 @@ import { useExchangeIndicator } from './useExchangeIndicator';
 import { useReserveIndicator } from './useReserveIndicator';
 import { usePfIndicator } from './usePfIndicator';
 import { useStockIndicator } from './useStockIndicator';
+import dayjs, { Dayjs } from 'dayjs';
 
 /**
  * 대시보드 ViewModel
@@ -76,12 +77,14 @@ export const useDashboardVM = () => {
   // 초기 데이터 로드
   useEffect(() => {
     const loadInitialData = async () => {
+      const initialDate = dayjs();
+
       await Promise.all([
-        bondHook.fetch(),
-        exchangeHook.fetch(),
-        reserveHook.fetch(),
+        bondHook.fetch(initialDate),
+        exchangeHook.fetch(initialDate),
+        reserveHook.fetch(initialDate),
         pfHook.fetch(),
-        stockHook.fetch(),
+        stockHook.fetch(initialDate),
       ]);
     };
 
@@ -90,13 +93,13 @@ export const useDashboardVM = () => {
   }, []); // 최초 마운트 시에만 실행
 
   // 모든 지표 데이터 새로고침
-  const refresh = async () => {
+  const refresh = async (selectedDate?: Dayjs) => {
     await Promise.all([
-      bondHook.fetch(),
-      exchangeHook.fetch(),
-      reserveHook.fetch(),
+      bondHook.fetch(selectedDate),
+      exchangeHook.fetch(selectedDate),
+      reserveHook.fetch(selectedDate),
       pfHook.fetch(),
-      stockHook.fetch(),
+      stockHook.fetch(selectedDate),
     ]);
   };
 

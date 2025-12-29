@@ -12,8 +12,8 @@ interface GaugeCardProps {
  */
 const SAMPLE_MOCK_INDICATOR: EconomicIndicator = {
   id: 'bond',
-  name: '국고채 10년물 금리',
-  value: 3.8,
+  name: 'UI 테스트용 MOCK 데이터',
+  value: 9999,
   unit: '%',
   status: 'WARNING',
   source: '한국은행 ECOS',
@@ -51,9 +51,8 @@ export const GaugeCard = ({ indicator }: GaugeCardProps) => {
   // indicator가 없으면 샘플 데이터 사용
   const displayIndicator = indicator ?? SAMPLE_MOCK_INDICATOR;
   const { min, max } = getGaugeRange(displayIndicator.id);
-
   const formatValue = (value: number, unit: string): string => {
-    if (unit === '억원' || unit === '억 달러') {
+    if (unit === '억원' || unit === '천 달러') {
       return `${value.toLocaleString('ko-KR')}${unit}`;
     }
     return `${value.toLocaleString('ko-KR')}${unit}`;
@@ -84,7 +83,7 @@ export const GaugeCard = ({ indicator }: GaugeCardProps) => {
   // ECharts Gauge 옵션 생성
   const value = displayIndicator.value;
   const normalizedValue = Math.max(min, Math.min(max, value));
-
+  console.log({ id: displayIndicator.id, value, normalizedValue, min, max });
   // 현재 값에 따른 색상 결정
   const statusColor =
     displayIndicator.status === 'DANGER'
@@ -94,9 +93,11 @@ export const GaugeCard = ({ indicator }: GaugeCardProps) => {
         : '#22c55e';
 
   // ECharts Gauge 옵션
-  // 외국인 순매수 지표의 경우 색상 구간을 반대로 설정
-  // (왼쪽: 순매도/나쁨=빨강, 오른쪽: 순매수/좋음=초록)
-  const isStockIndicator = displayIndicator.id === 'stock';
+  // 외국인 순매수와 외환보유액 지표의 경우 색상 구간을 반대로 설정
+  // - 외국인 순매수: 왼쪽(순매도/낮은 값)이 나쁨, 오른쪽(순매수/높은 값)이 좋음
+  // - 외환보유액: 왼쪽(낮은 값)이 나쁨, 오른쪽(높은 값)이 좋음
+  const isReverseIndicator =
+    displayIndicator.id === 'stock' || displayIndicator.id === 'reserve';
   const gaugeOption: EChartsOption = {
     series: [
       {
@@ -109,18 +110,18 @@ export const GaugeCard = ({ indicator }: GaugeCardProps) => {
         axisLine: {
           lineStyle: {
             width: 10,
-            color: isStockIndicator
+            color: isReverseIndicator
               ? [
-                  // 외국인 순매수: 왼쪽(순매도)이 나쁨, 오른쪽(순매수)이 좋음
-                  [0.33, '#ef4444'], // 빨강 (하위 33% = 순매도 구간)
-                  [0.66, '#eab308'], // 노랑 (중간 33%)
-                  [1, '#22c55e'], // 초록 (상위 34% = 순매수 구간)
+                  // 역방향 지표: 왼쪽(낮은 값)이 나쁨, 오른쪽(높은 값)이 좋음
+                  [0.33, '#ef4444'], // 빨강 (하위 33% = 위험 구간)
+                  [0.66, '#eab308'], // 노랑 (중간 33% = 주의 구간)
+                  [1, '#22c55e'], // 초록 (상위 34% = 안전 구간)
                 ]
               : [
-                  // 다른 지표: 왼쪽이 좋음, 오른쪽이 나쁨
-                  [0.33, '#22c55e'], // 초록 (하위 33%)
-                  [0.66, '#eab308'], // 노랑 (중간 33%)
-                  [1, '#ef4444'], // 빨강 (상위 34%)
+                  // 정방향 지표: 왼쪽이 좋음, 오른쪽이 나쁨
+                  [0.33, '#22c55e'], // 초록 (하위 33% = 안전 구간)
+                  [0.66, '#eab308'], // 노랑 (중간 33% = 주의 구간)
+                  [1, '#ef4444'], // 빨강 (상위 34% = 위험 구간)
                 ],
           },
         },
@@ -207,14 +208,20 @@ export const GaugeCard = ({ indicator }: GaugeCardProps) => {
         </div>
       </div>
 
-      {/* ECharts 반원형 게이지 */}
-      <div className="mb-4" style={{ height: '200px' }}>
-        <ReactECharts
-          option={gaugeOption}
-          style={{ width: '100%' }}
-          opts={{ renderer: 'svg' }}
-        />
-      </div>
+      {displayIndicator.id === 'pf' ? (
+        <div style={{ color: 'red' }}>
+          pf 연체율은 별도 데이터 수집 모듈 개발이 필요
+        </div>
+      ) : (
+        <div className="mb-4" style={{ height: '200px' }}>
+          {/* ECharts 반원형 게이지 */}
+          <ReactECharts
+            option={gaugeOption}
+            style={{ width: '100%' }}
+            opts={{ renderer: 'svg' }}
+          />
+        </div>
+      )}
 
       {/* 상태 배지 */}
       <div className="flex items-center justify-center">

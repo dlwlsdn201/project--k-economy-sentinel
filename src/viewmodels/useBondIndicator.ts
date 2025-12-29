@@ -6,6 +6,8 @@ import {
   determineStatus,
 } from '@models/constants/indicatorConstants';
 import { readBond10y, type ReadBond10yResponse } from '@models/api/readBond10y';
+import { formatValueFloat } from '@utils/format';
+import dayjs, { Dayjs } from 'dayjs';
 
 // 국고채 10년물 금리 atom
 export const bondIndicatorAtom = atom<EconomicIndicator | null>(null);
@@ -26,7 +28,7 @@ export const useBondIndicator = () => {
     const data = rawData as ReadBond10yResponse;
     // DATA_VALUE는 문자열로 제공되므로 숫자로 변환
     const dataValue = data?.StatisticSearch?.row?.[0]?.DATA_VALUE;
-    const value = dataValue ? Number(parseFloat(dataValue).toFixed(1)) : 0;
+    const value = dataValue ? formatValueFloat(parseFloat(dataValue)) : 0;
     const metadata = INDICATOR_METADATA.bond;
     const status = determineStatus('bond', value);
     const now = new Date();
@@ -47,13 +49,14 @@ export const useBondIndicator = () => {
   /**
    * 국고채 10년물 금리 데이터 조회 트리거 함수
    */
-  const fetch = async (date?: string) => {
+  const fetch = async (date?: Dayjs) => {
     setIsLoading(true);
     setError(null);
 
     try {
-      const targetDate =
-        date ?? new Date().toISOString().split('T')[0].replace(/-/g, '');
+      const targetDate = date
+        ? dayjs(date).format('YYYYMMDD')
+        : dayjs().format('YYYYMMDD');
       const rawData = await readBond10y({ date: targetDate });
       const transformed = transformBondData(rawData);
       setIndicator(transformed);
