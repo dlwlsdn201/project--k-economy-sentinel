@@ -21,7 +21,7 @@ export default defineConfig({
   server: {
     proxy: {
       // ECOS API 프록시 설정
-      '/api/StatisticSearch': {
+      '/api': {
         target: 'https://ecos.bok.or.kr',
         changeOrigin: true,
         rewrite: (path) => path.replace(/^\/api\/ecos/, '/api'),

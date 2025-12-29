@@ -49,7 +49,7 @@ export const readBond10y = async ({
 }: {
   date: string;
 }): Promise<ReadBond10yResponse> => {
-  const apiPath = `${ECOS_API_STATISTIC_SEARCH_PATH}/sample/json/kr/1/10/817Y002/D/${date}/${date}/010210000`;
+  const apiPath = `${ECOS_API_STATISTIC_SEARCH_PATH}/${import.meta.env.VITE_ECOS_OPEN_API_KEY}/json/kr/1/10/817Y002/D/${date}/${date}/010210000`;
   const url = getEcosApiUrl(apiPath);
 
   const response = await baseApiModule({

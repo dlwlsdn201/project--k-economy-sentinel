@@ -1,18 +1,24 @@
-import { atom, useAtomValue, useSetAtom } from 'jotai';
+import { atom, useAtom } from 'jotai';
 import { useState } from 'react';
 import type { EconomicIndicator } from '@models/types/indicatorTypes';
-import { INDICATOR_METADATA, determineStatus } from '@models/constants/indicatorConstants';
+import {
+  INDICATOR_METADATA,
+  determineStatus,
+} from '@models/constants/indicatorConstants';
+import {
+  readExchangeRate,
+  type ReadExchangeRateResponse,
+} from '@models/api/readExchangeRate';
 
 // 원/달러 환율 atom
-const exchangeIndicatorAtom = atom<EconomicIndicator | null>(null);
+export const exchangeIndicatorAtom = atom<EconomicIndicator | null>(null);
 
 /**
  * 원/달러 환율 지표 ViewModel Hook
  * API 호출 + 데이터 변환 + 상태 관리
  */
 export const useExchangeIndicator = () => {
-  const indicator = useAtomValue(exchangeIndicatorAtom);
-  const setIndicator = useSetAtom(exchangeIndicatorAtom);
+  const [indicator, setIndicator] = useAtom(exchangeIndicatorAtom);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -20,8 +26,19 @@ export const useExchangeIndicator = () => {
    * API 응답을 EconomicIndicator로 변환
    */
   const transformExchangeData = (rawData: unknown): EconomicIndicator => {
-    // TODO: 실제 API 응답 구조에 맞게 파싱 로직 구현
-    const value = (rawData as { value?: number })?.value ?? 0;
+    const data = rawData as ReadExchangeRateResponse;
+    // KeyStatisticList API 응답에서 환율 데이터 추출
+    // 환율은 보통 첫 번째 row에 있거나, KEYSTAT_NAME으로 필터링 필요
+    const exchangeRow =
+      data?.KeyStatisticList?.row?.find(
+        (row) =>
+          row.KEYSTAT_NAME?.includes('환율') ||
+          row.KEYSTAT_NAME?.includes('원/달러')
+      ) || data?.KeyStatisticList?.row?.[0];
+
+    // DATA_VALUE는 문자열로 제공되므로 숫자로 변환
+    const dataValue = exchangeRow?.DATA_VALUE;
+    const value = dataValue ? Number(parseFloat(dataValue).toFixed(1)) : 0;
     const metadata = INDICATOR_METADATA.exchange;
     const status = determineStatus('exchange', value);
     const now = new Date();
@@ -40,38 +57,23 @@ export const useExchangeIndicator = () => {
   };
 
   /**
-   * 원/달러 환율 데이터 조회
+   * 원/달러 환율 데이터 조회 트리거 함수
    */
-  const fetch = async (_date?: string) => {
+  const fetch = async (date?: string) => {
     setIsLoading(true);
     setError(null);
 
     try {
-      // TODO: 실제 API 호출 구현
-      // const rawData = await readExchangeRate({ date: _date });
-      // const transformed = transformExchangeData(rawData);
-      
-      // 임시: 목업 데이터
-      const mockValue = 1380;
-      const metadata = INDICATOR_METADATA.exchange;
-      const status = determineStatus('exchange', mockValue);
-      const now = new Date();
-
-      const transformed: EconomicIndicator = {
-        id: 'exchange',
-        name: metadata.name,
-        value: mockValue,
-        unit: metadata.unit,
-        status,
-        source: metadata.source,
-        description: metadata.description,
-        dataPeriod: metadata.dataPeriod,
-        fetchedAt: now.toISOString(),
-      };
-
+      const targetDate =
+        date ?? new Date().toISOString().split('T')[0].replace(/-/g, '');
+      const rawData = await readExchangeRate({ date: targetDate });
+      const transformed = transformExchangeData(rawData);
       setIndicator(transformed);
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : '원/달러 환율 데이터 조회 중 오류가 발생했습니다.';
+      const errorMessage =
+        err instanceof Error
+          ? err.message
+          : '원/달러 환율 데이터 조회 중 오류가 발생했습니다.';
       setError(errorMessage);
       console.error('useExchangeIndicator fetch error:', err);
     } finally {
@@ -84,8 +86,7 @@ export const useExchangeIndicator = () => {
    */
   const setSimulationValue = (value: number) => {
     if (!indicator) return;
-    
-    const metadata = INDICATOR_METADATA.exchange;
+
     const status = determineStatus('exchange', value);
     const now = new Date();
 
@@ -105,4 +106,3 @@ export const useExchangeIndicator = () => {
     setSimulationValue,
   };
 };
-
