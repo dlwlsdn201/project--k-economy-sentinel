@@ -123,7 +123,7 @@ export const calculateCrisisLevel = (
   // Level 3: 주의 (Caution)
   // 조건 1: 위험 지표 1개 + 주의 지표 2개 이상
   // 조건 2: 주의 및 위험 지표 합계 3개 이상
-  // 조건 3: 환율 > 1,400원 AND 외국인 순매도 > 1,000억원 (자본 이탈 가시화)
+  // 조건 3: 환율 > 1,400원 AND 외국인 순매수 > 1,000억원 (자본 이탈 가시화)
   if (dangerCount === 1 && warningCount >= 2) {
     return {
       level: 'CAUTION',
@@ -146,7 +146,7 @@ export const calculateCrisisLevel = (
   ) {
     return {
       level: 'CAUTION',
-      reason: `환율 ${exchangeRate.value.toLocaleString('ko-KR')}원과 외국인 순매도 ${Math.abs(foreignerSell.value).toLocaleString('ko-KR')}억원으로 자본 이탈이 가시화되고 있습니다.`,
+      reason: `환율 ${exchangeRate.value.toLocaleString('ko-KR')}원과 외국인 순매수 ${Math.abs(foreignerSell.value).toLocaleString('ko-KR')}억원으로 자본 이탈이 가시화되고 있습니다.`,
     };
   }
 

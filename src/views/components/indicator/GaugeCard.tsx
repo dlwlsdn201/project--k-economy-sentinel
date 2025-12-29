@@ -19,6 +19,7 @@ const SAMPLE_MOCK_INDICATOR: EconomicIndicator = {
   source: '한국은행 ECOS',
   description:
     '이 금리가 4%를 넘어선다면 내부 시스템의 균열이 생각보다 훨씬 심각하다는 경고등으로 봐야함.',
+  dataPeriod: '당일 종가 기준',
   fetchedAt: new Date().toISOString(),
 };
 
@@ -93,6 +94,9 @@ export const GaugeCard = ({ indicator }: GaugeCardProps) => {
         : '#22c55e';
 
   // ECharts Gauge 옵션
+  // 외국인 순매수 지표의 경우 색상 구간을 반대로 설정
+  // (왼쪽: 순매도/나쁨=빨강, 오른쪽: 순매수/좋음=초록)
+  const isStockIndicator = displayIndicator.id === 'stock';
   const gaugeOption: EChartsOption = {
     series: [
       {
@@ -101,15 +105,23 @@ export const GaugeCard = ({ indicator }: GaugeCardProps) => {
         endAngle: 0,
         min,
         max,
-        splitNumber: 6,
+        splitNumber: 8,
         axisLine: {
           lineStyle: {
             width: 10,
-            color: [
-              [0.33, '#22c55e'], // 초록 (하위 33%)
-              [0.66, '#eab308'], // 노랑 (중간 33%)
-              [1, '#ef4444'], // 빨강 (상위 34%)
-            ],
+            color: isStockIndicator
+              ? [
+                  // 외국인 순매수: 왼쪽(순매도)이 나쁨, 오른쪽(순매수)이 좋음
+                  [0.33, '#ef4444'], // 빨강 (하위 33% = 순매도 구간)
+                  [0.66, '#eab308'], // 노랑 (중간 33%)
+                  [1, '#22c55e'], // 초록 (상위 34% = 순매수 구간)
+                ]
+              : [
+                  // 다른 지표: 왼쪽이 좋음, 오른쪽이 나쁨
+                  [0.33, '#22c55e'], // 초록 (하위 33%)
+                  [0.66, '#eab308'], // 노랑 (중간 33%)
+                  [1, '#ef4444'], // 빨강 (상위 34%)
+                ],
           },
         },
         pointer: {
@@ -181,10 +193,18 @@ export const GaugeCard = ({ indicator }: GaugeCardProps) => {
         </div>
       </div>
 
-      {/* 데이터 수집 시간 표시 */}
-      <div className="mb-4 flex items-center gap-1 text-xs text-gray-500">
-        <Clock className="h-3 w-3" />
-        <span>업데이트: {formatDate(displayIndicator.fetchedAt)}</span>
+      {/* 데이터 산출 기준 및 수집 시간 표시 */}
+      <div className="mb-4 space-y-1">
+        {displayIndicator.dataPeriod && (
+          <div className="flex items-center gap-1 text-xs text-gray-600">
+            <span className="font-medium">데이터 기준:</span>
+            <span>{displayIndicator.dataPeriod}</span>
+          </div>
+        )}
+        <div className="flex items-center gap-1 text-xs text-gray-500">
+          <Clock className="h-3 w-3" />
+          <span>업데이트: {formatDate(displayIndicator.fetchedAt)}</span>
+        </div>
       </div>
 
       {/* ECharts 반원형 게이지 */}

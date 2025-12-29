@@ -23,13 +23,20 @@
 
 ## 📊 모니터링 지표
 
-| 지표                   | 설명                      | 위험 기준         |
-| ---------------------- | ------------------------- | ----------------- |
-| **국고채 10년물 금리** | 내부 시스템 균열의 예고편 | 4.0% 이상         |
-| **원/달러 환율**       | 위험의 신호탄             | 1,470원 이상      |
-| **외환보유액**         | 방어선의 체력             | 4,000억 달러 미만 |
-| **PF 대출 연체율**     | 폭탄 뇌관의 온도          | 10% 이상          |
-| **외국인 순매도**      | 국내 주식/채권 순매도     | 대규모 이탈       |
+| 지표                   | 설명                      | 위험 기준                    | ECOS API 코드 | 데이터 기준 |
+| ---------------------- | ------------------------- | ---------------------------- | ------------- | ----------- |
+| **국고채 10년물 금리** | 내부 시스템 균열의 예고편 | 4.0% 이상                    | -             | 일일        |
+| **원/달러 환율**       | 위험의 신호탄             | 1,470원 이상                 | -             | 일일        |
+| **외환보유액**         | 방어선의 체력             | 4,000억 달러 미만            | -             | 월간        |
+| **PF 대출 연체율**     | 폭탄 뇌관의 온도          | 10% 이상                     | -             | 월간        |
+| **외국인 순매수**      | 국내 주식/채권 순매수     | 순매도 5,000억원 이상 (위험) | 802Y001       | 일일        |
+
+> **참고**: 외국인 순매수(802Y001) 데이터 형식
+>
+> - **양수**: 순매수 (긍정적 신호)
+> - **음수**: 순매도 (부정적 신호)
+> - **데이터 기준**: 일일 기준 (일별 거래 데이터)
+> - **단위**: 억원
 
 ## 🛠 기술 스택
 
@@ -75,31 +82,272 @@
 API/Service → Model → ViewModel → View
 ```
 
+## 📐 시스템 다이어그램
+
+이 섹션은 PRD 기반으로 작성된 시스템 아키텍처 다이어그램입니다. 각 다이어그램은 시스템의 다른 관점을 보여줍니다.
+
+### 1. 데이터 흐름도 (DFD - Data Flow Diagram)
+
+시스템의 데이터 흐름을 보여주는 다이어그램입니다. 외부 데이터 소스부터 사용자까지의 데이터 흐름을 MVVM 패턴에 따라 표현합니다.
+
+```mermaid
+flowchart TD
+    A[외부 데이터 소스] --> B[Model Layer]
+    B --> C[ViewModel Layer]
+    C --> D[View Layer]
+    D --> E[사용자]
+
+    subgraph "외부 데이터 소스"
+        A1[한국은행 ECOS API]
+        A2[AI 자동 수집<br/>PF 연체율]
+        A3[Mock Data<br/>개발용]
+    end
+
+    subgraph "Model Layer"
+        B1[Types<br/>indicatorTypes.ts<br/>crisisTypes.ts]
+        B2[Constants<br/>indicatorConstants.ts]
+        B3[Services<br/>API 호출 로직]
+    end
+
+    subgraph "ViewModel Layer"
+        C1[useDashboardVM<br/>상태 관리]
+        C2[crisisLogic<br/>위기 레벨 계산]
+    end
+
+    subgraph "View Layer"
+        D1[DashboardPage]
+        D2[GaugeCard<br/>지표 카드]
+        D3[CrisisBanner<br/>위기 배너]
+        D4[ActionPlan<br/>행동 지침]
+    end
+
+    A1 --> B3
+    A2 --> B3
+    A3 --> B3
+    B3 --> B1
+    B3 --> B2
+    B1 --> C1
+    B2 --> C1
+    C1 --> C2
+    C2 --> D1
+    C1 --> D1
+    D1 --> D2
+    D1 --> D3
+    D1 --> D4
+    D2 --> E
+    D3 --> E
+    D4 --> E
+```
+
+### 2. 시스템 플로우 차트
+
+사용자 접속부터 대시보드 표시까지의 전체 시스템 플로우를 보여줍니다. 데이터 로드, 상태 계산, UI 렌더링, 사용자 상호작용 등의 단계를 포함합니다.
+
+```mermaid
+flowchart TD
+    Start([사용자 접속]) --> CheckData{데이터<br/>존재?}
+    CheckData -->|없음| LoadData[데이터 로드]
+    CheckData -->|있음| Display[대시보드 표시]
+
+    LoadData --> FetchAPI[API 호출<br/>또는 Mock Data]
+    FetchAPI --> ProcessData[데이터 처리]
+    ProcessData --> CalculateStatus[지표 상태 계산<br/>SAFE/WARNING/DANGER]
+    CalculateStatus --> CalculateCrisis[위기 레벨 계산<br/>STABLE/CONCERN/CAUTION/CRITICAL]
+    CalculateCrisis --> Display
+
+    Display --> ShowBanner[위기 배너 표시]
+    Display --> ShowIndicators[지표 카드 표시<br/>5개 지표]
+    Display --> ShowActionPlan[행동 지침 표시]
+
+    ShowBanner --> UserInteraction{사용자<br/>상호작용}
+    ShowIndicators --> UserInteraction
+    ShowActionPlan --> UserInteraction
+
+    UserInteraction -->|새로고침| LoadData
+    UserInteraction -->|시뮬레이션 모드| Simulation[값 조정<br/>개발용]
+    UserInteraction -->|일반 사용| End([대시보드 유지])
+
+    Simulation --> UpdateValues[값 업데이트]
+    UpdateValues --> CalculateStatus
+
+    style Start fill:#e1f5ff
+    style End fill:#e1f5ff
+    style CalculateCrisis fill:#fff4e6
+    style ShowBanner fill:#ffe6e6
+    style ShowIndicators fill:#e6f3ff
+    style ShowActionPlan fill:#e6ffe6
+```
+
+### 3. 컴포넌트 구조도
+
+React 컴포넌트의 계층 구조와 의존성을 보여줍니다. MVVM 패턴에 따라 Model, ViewModel, View 레이어 간의 관계를 표현합니다.
+
+```mermaid
+graph TD
+    A[App.tsx<br/>루트 컴포넌트] --> B[Providers.tsx<br/>Jotai Provider]
+    B --> C[DashboardPage<br/>메인 페이지]
+
+    A --> D[Header<br/>헤더]
+    A --> E[Footer<br/>푸터]
+    A --> F[SimulationPanel<br/>시뮬레이션 패널]
+
+    C --> G[CrisisBanner<br/>위기 배너]
+    C --> H[GaugeCard<br/>지표 카드 × 5]
+    C --> I[ActionPlan<br/>행동 지침]
+
+    C --> J[LoadingSpinner<br/>로딩 스피너]
+    C --> K[ErrorMessage<br/>에러 메시지]
+
+    subgraph "ViewModel"
+        L[useDashboardVM<br/>상태 관리]
+        M[crisisLogic<br/>위기 레벨 계산]
+    end
+
+    subgraph "Model"
+        N[indicatorTypes<br/>타입 정의]
+        O[indicatorConstants<br/>상수 및 기준값]
+        P[crisisTypes<br/>위기 타입]
+    end
+
+    C -.->|데이터 요청| L
+    L -.->|데이터 제공| C
+    C -.->|위기 레벨 계산| M
+    M -.->|결과 반환| C
+
+    L -.->|타입 참조| N
+    L -.->|상수 참조| O
+    M -.->|타입 참조| P
+    M -.->|상수 참조| O
+
+    H --> Q[ECharts Gauge<br/>게이지 차트]
+
+    style A fill:#ff6b6b
+    style C fill:#4ecdc4
+    style G fill:#ffe66d
+    style H fill:#95e1d3
+    style I fill:#a8e6cf
+    style L fill:#ffd93d
+    style M fill:#ffd93d
+```
+
+### 4. 데이터 처리 플로우 (Sequence Diagram)
+
+시스템의 데이터 처리 과정을 시간 순서대로 보여주는 시퀀스 다이어그램입니다. 사용자 요청부터 데이터 조회, 처리, 렌더링까지의 전체 과정을 표현합니다.
+
+```mermaid
+sequenceDiagram
+    participant User as 사용자
+    participant View as DashboardPage
+    participant VM as useDashboardVM
+    participant Model as indicatorConstants
+    participant Logic as crisisLogic
+    participant API as 외부 API/Mock
+
+    User->>View: 페이지 접속
+    View->>VM: 데이터 요청
+    VM->>API: 지표 데이터 조회
+    API-->>VM: 원시 데이터 반환
+
+    VM->>Model: determineStatus() 호출
+    Model-->>VM: 지표별 상태 반환<br/>(SAFE/WARNING/DANGER)
+
+    VM->>Logic: calculateCrisisLevel() 호출
+    Logic->>Logic: 지표 개수 집계<br/>(위험/주의/안전)
+    Logic->>Logic: 위기 레벨 판정<br/>(STABLE/CONCERN/CAUTION/CRITICAL)
+    Logic-->>VM: 위기 레벨 + 근거 반환
+
+    VM-->>View: 처리된 데이터 반환<br/>(indicators, crisisLevel, reason)
+
+    View->>View: CrisisBanner 렌더링
+    View->>View: GaugeCard × 5 렌더링
+    View->>View: ActionPlan 렌더링
+
+    View-->>User: 대시보드 표시
+```
+
+### 5. 위기 레벨 계산 로직 플로우
+
+5개 경제 지표를 기반으로 종합 위기 레벨을 계산하는 로직의 플로우차트입니다. 지표 개수 기반 판정 로직과 각 레벨별 판정 조건을 시각화합니다.
+
+```mermaid
+flowchart TD
+    Start([5개 지표 입력]) --> Count[지표 상태 집계<br/>위험/주의/안전 개수]
+
+    Count --> Check1{위험 지표<br/>≥ 2개?}
+    Check1 -->|Yes| Critical[CRITICAL<br/>위험]
+    Check1 -->|No| Check2{환율 > 1,480원<br/>OR<br/>외환보유액 < 3,800억?}
+
+    Check2 -->|Yes| Critical
+    Check2 -->|No| Check3{위험 1개 +<br/>주의 ≥ 2개?}
+
+    Check3 -->|Yes| Caution[CAUTION<br/>주의]
+    Check3 -->|No| Check4{주의 + 위험<br/>≥ 3개?}
+
+    Check4 -->|Yes| Caution
+    Check4 -->|No| Check5{환율 > 1,400원<br/>AND<br/>외국인 순매도 > 1,000억?}
+
+    Check5 -->|Yes| Caution
+    Check5 -->|No| Check6{주의 지표<br/>≥ 2개?}
+
+    Check6 -->|Yes| Concern[CONCERN<br/>관심]
+    Check6 -->|No| Check7{위험 지표<br/>1개?}
+
+    Check7 -->|Yes| Concern
+    Check7 -->|No| Check8{PF 연체율 > 8%<br/>OR<br/>국고채 금리 > 3.8%?}
+
+    Check8 -->|Yes| Concern
+    Check8 -->|No| Stable[STABLE<br/>양호]
+
+    Critical --> End([위기 레벨 반환])
+    Caution --> End
+    Concern --> End
+    Stable --> End
+
+    style Critical fill:#ef4444,color:#fff
+    style Caution fill:#f97316,color:#fff
+    style Concern fill:#eab308,color:#000
+    style Stable fill:#22c55e,color:#fff
+```
+
 ## 📁 프로젝트 구조
 
 ```
 src/
-├── models/              # [Model] 데이터 레이어
-│   ├── types/           # TypeScript 인터페이스 정의
-│   │   └── indicator.types.ts
-│   ├── constants/       # 상수 및 기준값 정의
-│   │   └── indicator.constants.ts
-│   └── services/        # API 호출 로직 (향후 구현)
+├── models/                    # [Model] 데이터 레이어
+│   ├── types/                 # TypeScript 인터페이스 정의
+│   │   ├── indicatorTypes.ts  # 경제 지표 타입
+│   │   └── crisisTypes.ts     # 위기 레벨 타입
+│   ├── constants/             # 상수 및 기준값 정의
+│   │   └── indicatorConstants.ts  # 지표 기준값 및 메타데이터
+│   └── services/              # API 호출 로직 (향후 구현)
 │
-├── viewmodels/          # [ViewModel] 비즈니스 로직 레이어
-│   └── use_dashboard_vm.ts
+├── viewmodels/                # [ViewModel] 비즈니스 로직 레이어
+│   └── useDashboardVM.ts      # 대시보드 상태 관리
 │
-├── views/               # [View] UI 레이어
-│   ├── pages/          # 페이지 컴포넌트
-│   │   └── dashboardPage.tsx
-│   └── components/     # 재사용 가능한 컴포넌트
-│       ├── layout/     # 레이아웃 컴포넌트
-│       ├── indicator/  # 지표 관련 컴포넌트
-│       └── common/     # 공통 컴포넌트
+├── views/                     # [View] UI 레이어
+│   ├── pages/                 # 페이지 컴포넌트
+│   │   └── DashboardPage.tsx  # 메인 대시보드 페이지
+│   └── components/            # 재사용 가능한 컴포넌트
+│       ├── layout/            # 레이아웃 컴포넌트
+│       │   ├── Header.tsx     # 헤더
+│       │   └── Footer.tsx     # 푸터
+│       ├── indicator/         # 지표 관련 컴포넌트
+│       │   └── GaugeCard.tsx  # 게이지 카드 (ECharts)
+│       ├── crisis/             # 위기 관련 컴포넌트
+│       │   ├── CrisisBanner.tsx  # 위기 배너
+│       │   └── ActionPlan.tsx    # 행동 지침
+│       ├── common/             # 공통 컴포넌트
+│       │   ├── LoadingSpinner.tsx  # 로딩 스피너
+│       │   └── ErrorMessage.tsx    # 에러 메시지
+│       └── simulation/         # 시뮬레이션 컴포넌트
+│           └── SimulationPanel.tsx  # 시뮬레이션 패널 (개발용)
 │
-└── app/                 # 애플리케이션 진입점
-    ├── app.tsx         # 메인 App 컴포넌트
-    └── providers.tsx   # Context Provider 래핑
+├── utils/                     # 유틸리티 함수
+│   └── crisisLogic.ts         # 위기 레벨 계산 로직
+│
+└── app/                       # 애플리케이션 진입점
+    ├── App.tsx                # 메인 App 컴포넌트
+    └── Providers.tsx          # Context Provider 래핑
 ```
 
 ## 🚀 시작하기

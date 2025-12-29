@@ -51,6 +51,9 @@ export const useDashboardVM = () => {
 
     try {
       // TODO: API 연동 시 실제 데이터 fetch
+      // ECOS API 참고:
+      // - 외국인 순매수: 802Y001 (일일 기준, 양수=순매수, 음수=순매도, 단위: 억원)
+      // - 기타 지표: 해당 API 코드 확인 필요
       // const data = await fetchIndicators();
       // setIndicators(data);
       const mockData = createMockIndicators();
@@ -108,6 +111,7 @@ export const createMockIndicators = (): EconomicIndicator[] => {
       status,
       source: metadata.source,
       description: metadata.description,
+      dataPeriod: metadata.dataPeriod,
       fetchedAt,
     };
   });
