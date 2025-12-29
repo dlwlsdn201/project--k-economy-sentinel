@@ -4,6 +4,7 @@
 # Compiled files
 dist
 .next
+*.tsbuildinfo
 
 # Log file
 *.log
