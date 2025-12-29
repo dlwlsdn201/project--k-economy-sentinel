@@ -1,10 +1,12 @@
 {
-  "@/*": ["src/*"],
-  "@features": ["src/features/*"],
-  "@entities": ["src/entities/*"],
-  "@shared": ["src/shared/*"],
-  "@@types": ["src/types/*"],
-  "@widgets": ["src/widgets/*"],
-  "@assets": ["src/assets/*"],
-  "@app": ["src/app/*"]
+  "compilerOptions": {
+    "baseUrl": "./",
+    "paths": {
+      "@models/*": ["./src/models/*"],
+      "@viewmodels/*": ["./src/viewmodels/*"],
+      "@views/*": ["./src/views/*"],
+      "@app/*": ["./src/app/*"],
+      "@assets/*": ["./src/assets/*"]
+    }
+  }
 }
