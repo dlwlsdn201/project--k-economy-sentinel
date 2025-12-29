@@ -48,7 +48,9 @@
 - **ESLint**: ^9.39.1 - 코드 린팅
 - **TypeScript ESLint**: ^8.48.1 - TypeScript 전용 ESLint 규칙
 - **Prettier**: ^3.7.4 - 코드 포맷팅
-- **Jest**: ^30.2.0 - 테스트 프레임워크
+- **Vitest**: ^4.0.16 - Vite 네이티브 테스트 프레임워크
+- **@vitest/ui**: ^4.0.16 - Vitest UI 인터페이스
+- **jsdom**: ^27.4.0 - DOM 환경 시뮬레이션
 - **Testing Library**: React 컴포넌트 테스트
 
 ### 배포
@@ -143,8 +145,14 @@ pnpm start
 # 테스트 실행
 pnpm test
 
-# Watch 모드로 테스트 실행 (커버리지 포함)
-pnpm test:auto
+# Watch 모드로 테스트 실행
+pnpm test:watch
+
+# UI 모드로 테스트 실행
+pnpm test:ui
+
+# 커버리지 포함 테스트 실행
+pnpm test:coverage
 ```
 
 ### 린트
@@ -183,7 +191,7 @@ pnpm lint
 - `vite.config.ts` - Vite 빌드 설정 및 path alias
 - `tailwind.config.js` - Tailwind CSS 커스텀 설정
 - `postcss.config.js` - PostCSS 플러그인 설정
-- `jest.config.ts` - Jest 테스트 설정
+- `vitest.setup.ts` - Vitest 테스트 설정 파일
 - `eslint.config.js` - ESLint 린팅 규칙 (Flat Config 형식)
 - `tsconfig.json` - TypeScript 컴파일러 설정
 - `tsconfig.path.json` - Path alias 설정

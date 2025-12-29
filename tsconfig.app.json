@@ -25,10 +25,9 @@
     "noFallthroughCasesInSwitch": true,
     "types": [
       "vite/client",
-      "jest",
-      "@testing-library/jest-dom",
-      "@jest/globals"
-    ] // Vite, Jest, RTL 타입 추가
+      "vitest/globals",
+      "@testing-library/jest-dom"
+    ] // Vite, Vitest, RTL 타입 추가
   },
   "include": ["src"],
   "exclude": ["node_modules", "dist"]
