@@ -1,0 +1,54 @@
+name: Auto Merge Feature Branches
+
+on:
+  push:
+    branches:
+      - "*-feature--*"
+      - "feature/*"
+      - "refactor/*"
+      - "improve/*"
+      - "bugfix/*"
+      - "hotfix/*"
+
+jobs:
+  build-test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: 22
+
+      - name: Install pnpm
+        run: npm install -g pnpm # pnpm 설치
+
+      - name: Install dependencies
+        run: pnpm install # pnpm으로 의존성 설치
+
+      - name: Build project
+        run: pnpm run build # pnpm으로 빌드 실행
+
+  merge-to-main:
+    needs: build-test
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout main branch
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+
+      - name: Configure Git
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+
+      - name: Merge feature branch into main
+        run: |
+          git fetch origin
+          git checkout main
+          git merge --no-ff origin/${{ github.ref_name }} -m "🔀 Auto merged by GitHub Actions"
+          git push origin main
