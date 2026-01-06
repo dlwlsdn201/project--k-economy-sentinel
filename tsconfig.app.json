@@ -12,7 +12,8 @@
       "@views/*": ["./src/views/*"],
       "@app/*": ["./src/app/*"],
       "@assets/*": ["./src/assets/*"],
-      "@utils/*": ["./src/utils/*"]
+      "@utils/*": ["./src/utils/*"],
+      "@config/*": ["./src/config/*"]
     },
 
     /* Bundler mode */
