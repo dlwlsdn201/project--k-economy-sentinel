@@ -2,13 +2,13 @@ import type { IndicatorId, IndicatorStatus } from '../types/indicatorTypes';
 
 // 국고채 10년물 금리 기준값
 export const THRESHOLD_BOND_RATE_SAFE = 3.5;
-export const THRESHOLD_BOND_RATE_WARNING = 3.9;
+export const THRESHOLD_BOND_RATE_WARNING = 3.5; // PRD 업데이트: 3.5% (조기 경보용)
 export const THRESHOLD_BOND_RATE_DANGER = 4.0;
 
 // 원/달러 환율 기준값
 export const THRESHOLD_EXCHANGE_RATE_SAFE = 1350;
-export const THRESHOLD_EXCHANGE_RATE_WARNING = 1450;
-export const THRESHOLD_EXCHANGE_RATE_DANGER = 1470;
+export const THRESHOLD_EXCHANGE_RATE_WARNING = 1420; // PRD 업데이트: 1,420원
+export const THRESHOLD_EXCHANGE_RATE_DANGER = 1500; // PRD 업데이트: 1,500원 (IMF급 위기)
 
 // 외환보유액 기준값 (억 달러)
 export const THRESHOLD_RESERVE_SAFE = 4200;
@@ -27,6 +27,13 @@ export const THRESHOLD_PF_RATE_DANGER = 10;
 export const THRESHOLD_STOCK_FLOW_SAFE = 0; // 순매수 지속 (0 이상)
 export const THRESHOLD_STOCK_FLOW_WARNING = -1000; // 순매도 1,000억원 이상 (주의)
 export const THRESHOLD_STOCK_FLOW_DANGER = -5000; // 순매도 5,000억원 이상 (위험)
+
+// 한국은행 RP(환매조건부채권) 매입 규모 기준값 (조 원)
+// PRD 업데이트: 유동성 가뭄 지표
+// - 높을수록 나쁨 (한국은행이 급하게 돈을 풀고 있다는 신호)
+export const THRESHOLD_RP_SAFE = 0;
+export const THRESHOLD_RP_WARNING = 3; // 3조 원 이상 (주의)
+export const THRESHOLD_RP_DANGER = 5; // 5조 원 이상 (위험)
 
 // 지표 메타데이터
 export const INDICATOR_METADATA: Record<
@@ -79,6 +86,14 @@ export const INDICATOR_METADATA: Record<
     source: '한국은행 ECOS',
     dataPeriod: '당일 기준',
   },
+  rp: {
+    name: '한국은행 RP 매입 규모',
+    unit: '조원',
+    description:
+      '한국은행이 시중에 돈을 얼마나 급하게 풀고 있는지 보여주는 유동성 가뭄 지표. RP 3조 원 이상이면 부동산 매도 고려, 5조 원 이상이면 비상 상황.',
+    source: '한국은행 ECOS',
+    dataPeriod: '월 평균 기준',
+  },
 };
 
 /**
@@ -112,6 +127,11 @@ export const determineStatus = (
     case 'stock': {
       if (value <= THRESHOLD_STOCK_FLOW_DANGER) return 'DANGER';
       if (value <= THRESHOLD_STOCK_FLOW_WARNING) return 'WARNING';
+      return 'SAFE';
+    }
+    case 'rp': {
+      if (value >= THRESHOLD_RP_DANGER) return 'DANGER';
+      if (value >= THRESHOLD_RP_WARNING) return 'WARNING';
       return 'SAFE';
     }
     default:

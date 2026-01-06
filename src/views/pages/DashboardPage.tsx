@@ -34,7 +34,7 @@ export const DashboardPage = () => {
           경제 위기 감지 대시보드
         </h2>
         <p className="text-gray-600">
-          5대 핵심 경제 지표를 실시간으로 모니터링합니다.
+          6대 핵심 경제 지표를 실시간으로 모니터링합니다.
         </p>
       </div>
 
@@ -63,7 +63,7 @@ export const DashboardPage = () => {
         <h3 className="text-xl font-semibold text-gray-900 mb-4">
           대응 행동 지침
         </h3>
-        <ActionPlan level={crisisLevel} />
+        <ActionPlan level={crisisLevel} indicators={indicators} />
       </div>
     </div>
   );

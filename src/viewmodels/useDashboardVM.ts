@@ -5,6 +5,7 @@ import { useExchangeIndicator } from './useExchangeIndicator';
 import { useReserveIndicator } from './useReserveIndicator';
 import { usePfIndicator } from './usePfIndicator';
 import { useStockIndicator } from './useStockIndicator';
+import { useRpIndicator } from './useRpIndicator';
 import dayjs, { Dayjs } from 'dayjs';
 
 /**
@@ -23,6 +24,7 @@ export const useDashboardVM = () => {
   const reserveHook = useReserveIndicator();
   const pfHook = usePfIndicator();
   const stockHook = useStockIndicator();
+  const rpHook = useRpIndicator();
 
   // 전체 지표 배열 조합
   const indicators = useMemo<EconomicIndicator[]>(() => {
@@ -33,9 +35,10 @@ export const useDashboardVM = () => {
     if (reserveHook.indicator) result.push(reserveHook.indicator);
     if (pfHook.indicator) result.push(pfHook.indicator);
     if (stockHook.indicator) result.push(stockHook.indicator);
+    if (rpHook.indicator) result.push(rpHook.indicator);
 
     return result;
-  }, [bondHook, exchangeHook, reserveHook, pfHook, stockHook]);
+  }, [bondHook, exchangeHook, reserveHook, pfHook, stockHook, rpHook]);
 
   // 전체 로딩 상태 (하나라도 로딩 중이면 true)
   const isLoading = useMemo(
@@ -44,13 +47,15 @@ export const useDashboardVM = () => {
       exchangeHook.isLoading ||
       reserveHook.isLoading ||
       pfHook.isLoading ||
-      stockHook.isLoading,
+      stockHook.isLoading ||
+      rpHook.isLoading,
     [
       bondHook.isLoading,
       exchangeHook.isLoading,
       reserveHook.isLoading,
       pfHook.isLoading,
       stockHook.isLoading,
+      rpHook.isLoading,
     ]
   );
 
@@ -62,6 +67,7 @@ export const useDashboardVM = () => {
     if (reserveHook.error) errorList.push(reserveHook.error);
     if (pfHook.error) errorList.push(pfHook.error);
     if (stockHook.error) errorList.push(stockHook.error);
+    if (rpHook.error) errorList.push(rpHook.error);
     return errorList;
   }, [
     bondHook.error,
@@ -69,6 +75,7 @@ export const useDashboardVM = () => {
     reserveHook.error,
     pfHook.error,
     stockHook.error,
+    rpHook.error,
   ]);
 
   // 첫 번째 에러 메시지 (또는 통합 메시지)
@@ -85,6 +92,7 @@ export const useDashboardVM = () => {
         reserveHook.fetch(initialDate),
         pfHook.fetch(),
         stockHook.fetch(initialDate),
+        rpHook.fetch(initialDate),
       ]);
     };
 
@@ -100,6 +108,7 @@ export const useDashboardVM = () => {
       reserveHook.fetch(selectedDate),
       pfHook.fetch(),
       stockHook.fetch(selectedDate),
+      rpHook.fetch(selectedDate),
     ]);
   };
 
@@ -124,6 +133,9 @@ export const useDashboardVM = () => {
         case 'stock':
           stockHook.setSimulationValue(indicator.value);
           break;
+        case 'rp':
+          rpHook.setSimulationValue(indicator.value);
+          break;
         default:
           // 알 수 없는 지표 ID는 무시
           break;
@@ -144,6 +156,7 @@ export const useDashboardVM = () => {
       reserve: reserveHook,
       pf: pfHook,
       stock: stockHook,
+      rp: rpHook,
     },
   };
 };

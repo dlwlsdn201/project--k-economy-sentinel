@@ -5,6 +5,7 @@ import {
   INDICATOR_METADATA,
   determineStatus,
 } from '@models/constants/indicatorConstants';
+import dayjs from 'dayjs';
 
 // PF 대출 연체율 atom
 const pfIndicatorAtom = atom<EconomicIndicator | null>(null);
@@ -53,7 +54,6 @@ export const usePfIndicator = () => {
       const mockValue = 8.5;
       const metadata = INDICATOR_METADATA.pf;
       const status = determineStatus('pf', mockValue);
-      const now = new Date();
 
       const transformed: EconomicIndicator = {
         id: 'pf',
@@ -64,7 +64,7 @@ export const usePfIndicator = () => {
         source: metadata.source,
         description: metadata.description,
         dataPeriod: metadata.dataPeriod,
-        fetchedAt: now.toISOString(),
+        fetchedAt: dayjs().toISOString(),
       };
 
       setIndicator(transformed);
@@ -85,16 +85,14 @@ export const usePfIndicator = () => {
    */
   const setSimulationValue = (value: number) => {
     if (!indicator) return;
-    
-    const metadata = INDICATOR_METADATA.pf;
+
     const status = determineStatus('pf', value);
-    const now = new Date();
 
     setIndicator({
       ...indicator,
       value,
       status,
-      fetchedAt: now.toISOString(),
+      fetchedAt: dayjs().toISOString(),
     });
   };
 

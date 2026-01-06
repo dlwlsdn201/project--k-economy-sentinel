@@ -1,13 +1,18 @@
 import type { CrisisLevel } from '@models/types/crisisTypes';
-import { ACTION_PLANS } from '@utils/crisisLogic';
+import type { EconomicIndicator } from '@models/types/indicatorTypes';
+import { generateActionPlan } from '@utils/crisisLogic';
 import { CheckCircle2, TrendingUp, DollarSign } from 'lucide-react';
 
 interface ActionPlanProps {
   level: CrisisLevel;
+  indicators?: EconomicIndicator[];
 }
 
-export const ActionPlan = ({ level }: ActionPlanProps) => {
-  const plan = ACTION_PLANS[level];
+export const ActionPlan = ({ level, indicators = [] }: ActionPlanProps) => {
+  // PRD 업데이트: 지표 값에 따른 동적 Action Plan 생성
+  const plan = indicators.length > 0
+    ? generateActionPlan(level, indicators)
+    : generateActionPlan(level, []);
   const isCritical = level === 'CRITICAL';
 
   return (

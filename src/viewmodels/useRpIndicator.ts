@@ -5,59 +5,62 @@ import {
   INDICATOR_METADATA,
   determineStatus,
 } from '@models/constants/indicatorConstants';
-import { readBond10y, type ReadBond10yResponse } from '@models/api/readBond10y';
+import { readRp, type ReadRpResponse } from '@models/api/readRp';
 import { formatValueFloat } from '@utils/format';
 import { isValidStatisticSearchResponse } from '@utils/apiValidation';
 import dayjs, { Dayjs } from 'dayjs';
 
-// 국고채 10년물 금리 atom
-export const bondIndicatorAtom = atom<EconomicIndicator | null>(null);
+// 한국은행 RP 매입 규모 atom
+export const rpIndicatorAtom = atom<EconomicIndicator | null>(null);
 
 /**
- * 국고채 10년물 금리 지표 ViewModel Hook
+ * 한국은행 RP 매입 규모 지표 ViewModel Hook
  * API 호출 + 데이터 변환 + 상태 관리
  */
-export const useBondIndicator = () => {
-  const [indicator, setIndicator] = useAtom(bondIndicatorAtom);
+export const useRpIndicator = () => {
+  const [indicator, setIndicator] = useAtom(rpIndicatorAtom);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   /**
    * API 응답을 EconomicIndicator로 변환
    * @param rawData - API 응답 데이터
-   * @param actualDate - 실제 데이터 날짜 (YYYYMMDD 형식)
+   * @param actualDate - 실제 데이터 날짜 (YYYYMM 형식, 월별 데이터)
    */
-  const transformBondData = (
+  const transformRpData = (
     rawData: unknown,
     actualDate: string
   ): EconomicIndicator => {
-    const data = rawData as ReadBond10yResponse;
+    const data = rawData as ReadRpResponse;
     // DATA_VALUE는 문자열로 제공되므로 숫자로 변환
-    const dataValue = data?.StatisticSearch?.row?.[0]?.DATA_VALUE;
-    const value = dataValue ? formatValueFloat(parseFloat(dataValue)) : 0;
-    const metadata = INDICATOR_METADATA.bond;
-    const status = determineStatus('bond', value);
+    // RP는 조 원 단위로 표시 (억 원이면 100으로 나눔)
+    const dataValue = data?.StatisticSearch?.row?.[1]?.DATA_VALUE; // row[0] 은 RP 매입 '건'수 단위
+    const valueInHundredMillion = dataValue ? parseFloat(dataValue) : 0;
+    // 조 원 단위로 변환 (억 원 / 10000)
+    const value = valueInHundredMillion / 10000;
+    const metadata = INDICATOR_METADATA.rp;
+    const status = determineStatus('rp', value);
 
     // 갱신 날짜는 현재 시간
     const fetchedAt = dayjs().toISOString();
 
     return {
-      id: 'bond',
+      id: 'rp',
       name: metadata.name,
-      value,
+      value: formatValueFloat(value),
       unit: metadata.unit,
       status,
       source: metadata.source,
       description: metadata.description,
       dataPeriod: metadata.dataPeriod,
-      dataDate: actualDate, // 실제 데이터 날짜 (YYYYMMDD 형식)
+      dataDate: actualDate, // 실제 데이터 날짜 (YYYYMM 형식)
       fetchedAt, // 갱신 날짜
     };
   };
 
   /**
-   * 국고채 10년물 금리 데이터 조회 트리거 함수
-   * 유효한 데이터가 나올 때까지 날짜를 -1일씩 빼면서 재시도
+   * 한국은행 RP 매입 규모 데이터 조회 트리거 함수
+   * 유효한 데이터가 나올 때까지 날짜를 -1개월씩 빼면서 재시도
    */
   const fetch = async (date?: Dayjs) => {
     setIsLoading(true);
@@ -65,18 +68,18 @@ export const useBondIndicator = () => {
 
     try {
       const startDate = date ? dayjs(date) : dayjs();
-      const maxRetries = 30; // 최대 30일 전까지 재시도
+      const maxRetries = 12; // 최대 12개월 전까지 재시도
       let currentDate = startDate;
-      let rawData: ReadBond10yResponse | null = null;
-      let actualDate = startDate.format('YYYYMMDD');
+      let rawData: ReadRpResponse | null = null;
+      let actualDate = startDate.format('YYYYMM');
 
-      // 유효한 데이터가 나올 때까지 날짜를 -1일씩 빼면서 재시도
+      // 유효한 데이터가 나올 때까지 날짜를 -1개월씩 빼면서 재시도
       for (let i = 0; i < maxRetries; i++) {
-        const dateStr = currentDate.format('YYYYMMDD');
+        const dateStr = currentDate.format('YYYYMM');
 
         try {
           // eslint-disable-next-line no-await-in-loop
-          const response = await readBond10y({ date: dateStr });
+          const response = await readRp({ date: dateStr });
 
           // 응답이 유효한지 확인
           if (isValidStatisticSearchResponse(response)) {
@@ -85,31 +88,31 @@ export const useBondIndicator = () => {
             break;
           }
         } catch {
-          // API 에러는 무시하고 다음 날짜로 재시도
+          // API 에러는 무시하고 이전 달로 재시도
           console.warn(
-            `useBondIndicator: 날짜 ${dateStr}에서 데이터 조회 실패, 이전 날짜로 재시도`
+            `useRpIndicator: 날짜 ${dateStr}에서 데이터 조회 실패, 이전 달로 재시도`
           );
         }
 
-        // 이전 날짜로 이동 (주말/공휴일 제외하고 -1일)
-        currentDate = currentDate.subtract(1, 'day');
+        // 이전 달로 이동
+        currentDate = currentDate.subtract(1, 'month');
       }
 
       if (!rawData) {
         throw new Error(
-          `${maxRetries}일 이내의 유효한 데이터를 찾을 수 없습니다.`
+          `${maxRetries}개월 이내의 유효한 데이터를 찾을 수 없습니다.`
         );
       }
 
-      const transformed = transformBondData(rawData, actualDate);
+      const transformed = transformRpData(rawData, actualDate);
       setIndicator(transformed);
     } catch (err) {
       const errorMessage =
         err instanceof Error
           ? err.message
-          : '국고채 10년물 금리 데이터 조회 중 오류가 발생했습니다.';
+          : '한국은행 RP 매입 규모 데이터 조회 중 오류가 발생했습니다.';
       setError(errorMessage);
-      console.error('useBondIndicator fetch error:', err);
+      console.error('useRpIndicator fetch error:', err);
     } finally {
       setIsLoading(false);
     }
@@ -121,7 +124,7 @@ export const useBondIndicator = () => {
   const setSimulationValue = (value: number) => {
     if (!indicator) return;
 
-    const status = determineStatus('bond', value);
+    const status = determineStatus('rp', value);
 
     setIndicator({
       ...indicator,

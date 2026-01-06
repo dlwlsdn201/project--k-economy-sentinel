@@ -2,6 +2,12 @@ import type { EconomicIndicator } from '@models/types/indicatorTypes';
 import { Clock } from 'lucide-react';
 import ReactECharts from 'echarts-for-react';
 import type { EChartsOption } from 'echarts';
+import dayjs from 'dayjs';
+import relativeTime from 'dayjs/plugin/relativeTime';
+import 'dayjs/locale/ko';
+
+dayjs.extend(relativeTime);
+dayjs.locale('ko');
 
 interface GaugeCardProps {
   indicator?: EconomicIndicator;
@@ -38,6 +44,8 @@ const getGaugeRange = (indicatorId: string): { min: number; max: number } => {
       return { min: 0, max: 15 };
     case 'stock':
       return { min: -10000, max: 5000 };
+    case 'rp':
+      return { min: 0, max: 10 };
     default:
       return { min: 0, max: 100 };
   }
@@ -58,32 +66,49 @@ export const GaugeCard = ({ indicator }: GaugeCardProps) => {
     return `${value.toLocaleString('ko-KR')}${unit}`;
   };
 
-  const formatDate = (dateString: string): string => {
-    const date = new Date(dateString);
-    const now = new Date();
-    const diffMs = now.getTime() - date.getTime();
-    const diffMins = Math.floor(diffMs / 60000);
-    const diffHours = Math.floor(diffMs / 3600000);
-    const diffDays = Math.floor(diffMs / 86400000);
+  /**
+   * 갱신 날짜 포맷팅 (상대 시간)
+   */
+  const formatFetchedDate = (dateString: string): string => {
+    const date = dayjs(dateString);
+    const now = dayjs();
+    const diffMins = now.diff(date, 'minute');
+    const diffHours = now.diff(date, 'hour');
+    const diffDays = now.diff(date, 'day');
 
     if (diffMins < 1) return '방금 전';
     if (diffMins < 60) return `${diffMins}분 전`;
     if (diffHours < 24) return `${diffHours}시간 전`;
     if (diffDays < 7) return `${diffDays}일 전`;
 
-    return date.toLocaleDateString('ko-KR', {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit',
-    });
+    return date.format('YYYY년 M월 D일 HH:mm');
+  };
+
+  /**
+   * 데이터 기준 날짜 포맷팅 (YYYY-MM-DD 또는 YYYY-MM)
+   */
+  const formatDataDate = (dataDate?: string): string | null => {
+    if (!dataDate) return null;
+
+    // YYYYMMDD 형식 (Daily 데이터)
+    if (dataDate.length === 8) {
+      const date = dayjs(dataDate, 'YYYYMMDD');
+      return date.isValid() ? date.format('YYYY-MM-DD') : null;
+    }
+
+    // YYYYMM 형식 (Monthly 데이터)
+    if (dataDate.length === 6) {
+      const date = dayjs(dataDate, 'YYYYMM');
+      return date.isValid() ? date.format('YYYY-MM') : null;
+    }
+
+    return null;
   };
 
   // ECharts Gauge 옵션 생성
   const value = displayIndicator.value;
   const normalizedValue = Math.max(min, Math.min(max, value));
-  console.log({ id: displayIndicator.id, value, normalizedValue, min, max });
+
   // 현재 값에 따른 색상 결정
   const statusColor =
     displayIndicator.status === 'DANGER'
@@ -93,11 +118,14 @@ export const GaugeCard = ({ indicator }: GaugeCardProps) => {
         : '#22c55e';
 
   // ECharts Gauge 옵션
-  // 외국인 순매수와 외환보유액 지표의 경우 색상 구간을 반대로 설정
+  // 외국인 순매수, 외환보유액, RP 지표의 경우 색상 구간을 반대로 설정
   // - 외국인 순매수: 왼쪽(순매도/낮은 값)이 나쁨, 오른쪽(순매수/높은 값)이 좋음
   // - 외환보유액: 왼쪽(낮은 값)이 나쁨, 오른쪽(높은 값)이 좋음
+  // - RP 매입 규모: 왼쪽(낮은 값)이 좋음, 오른쪽(높은 값)이 나쁨
   const isReverseIndicator =
-    displayIndicator.id === 'stock' || displayIndicator.id === 'reserve';
+    displayIndicator.id === 'stock' ||
+    displayIndicator.id === 'reserve' ||
+    displayIndicator.id === 'rp';
   const gaugeOption: EChartsOption = {
     series: [
       {
@@ -194,17 +222,17 @@ export const GaugeCard = ({ indicator }: GaugeCardProps) => {
         </div>
       </div>
 
-      {/* 데이터 산출 기준 및 수집 시간 표시 */}
+      {/* 데이터 기준 및 업데이트 시간 표시 */}
       <div className="mb-4 space-y-1">
-        {displayIndicator.dataPeriod && (
+        {displayIndicator.dataDate && (
           <div className="flex items-center gap-1 text-xs text-gray-600">
             <span className="font-medium">데이터 기준:</span>
-            <span>{displayIndicator.dataPeriod}</span>
+            <span>{formatDataDate(displayIndicator.dataDate)}</span>
           </div>
         )}
         <div className="flex items-center gap-1 text-xs text-gray-500">
           <Clock className="h-3 w-3" />
-          <span>업데이트: {formatDate(displayIndicator.fetchedAt)}</span>
+          <span>업데이트: {formatFetchedDate(displayIndicator.fetchedAt)}</span>
         </div>
       </div>
 

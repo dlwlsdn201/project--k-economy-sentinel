@@ -23,8 +23,13 @@ export const useReserveIndicator = () => {
 
   /**
    * API 응답을 EconomicIndicator로 변환
+   * @param rawData - API 응답 데이터
+   * @param actualDate - 실제 데이터 날짜 (YYYYMM 형식)
    */
-  const transformReserveData = (rawData: unknown): EconomicIndicator => {
+  const transformReserveData = (
+    rawData: unknown,
+    actualDate: string
+  ): EconomicIndicator => {
     const data = rawData as ReadReserveResponse;
     // DATA_VALUE는 문자열로 제공되므로 숫자로 변환
     const dataValue = data?.StatisticSearch?.row?.[0]?.DATA_VALUE;
@@ -32,7 +37,10 @@ export const useReserveIndicator = () => {
     const formattedValueForBillions = formatValueFloat(value / 100000); // 천 달러 단위인 raw data -> "억달러" 단위 변환
     const metadata = INDICATOR_METADATA.reserve;
     const status = determineStatus('reserve', formattedValueForBillions);
-    const now = new Date();
+    
+    // 갱신 날짜는 현재 시간
+    const fetchedAt = dayjs().toISOString();
+
     return {
       id: 'reserve',
       name: metadata.name,
@@ -42,7 +50,8 @@ export const useReserveIndicator = () => {
       source: metadata.source,
       description: metadata.description,
       dataPeriod: metadata.dataPeriod,
-      fetchedAt: now.toISOString(),
+      dataDate: actualDate, // 실제 데이터 날짜 (YYYYMM 형식)
+      fetchedAt, // 갱신 날짜
     };
   };
 
@@ -61,7 +70,7 @@ export const useReserveIndicator = () => {
         : dayjs().subtract(1, 'month').format('YYYYMM');
 
       const rawData = await readReserve({ date: targetDate });
-      const transformed = transformReserveData(rawData);
+      const transformed = transformReserveData(rawData, targetDate);
       setIndicator(transformed);
     } catch (err) {
       const errorMessage =
@@ -82,13 +91,12 @@ export const useReserveIndicator = () => {
     if (!indicator) return;
 
     const status = determineStatus('reserve', value);
-    const now = new Date();
 
     setIndicator({
       ...indicator,
       value,
       status,
-      fetchedAt: now.toISOString(),
+      fetchedAt: dayjs().toISOString(),
     });
   };
 
